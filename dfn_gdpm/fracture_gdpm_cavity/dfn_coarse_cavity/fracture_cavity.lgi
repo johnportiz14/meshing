@@ -302,10 +302,10 @@ cmo / select / mo_1_2
 
 cmo / status / brief
 
-# --- athis point mo_1_2 still has same # of nodes as moall
+# --- a this point mo_1_2 still has same # of nodes as moall
 dump / gmv / tmp_cylpl.gmv / mo_1_2
 # --- This rmpoint removes nodes
-rmpoint / compress
+#rmpoint / compress
 dump / gmv / tmp_cylplrmpoint.gmv / mo_1_2
 resetpts / itp 
 cmo / printatt / mo_1_2 / -all- / minmax/
