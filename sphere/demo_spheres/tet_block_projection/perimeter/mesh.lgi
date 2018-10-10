@@ -1,0 +1,152 @@
+*
+* Create a tet sphere mesh with projection of a cube point distribution
+*
+* npts is of the form 6*i**2
+
+#  ------------
+
+define / RADIUS / 20.0
+
+define / R1 / 5.0
+define / R2 / 10.0
+define / R3 / 15.0
+define / R4 / 20.0
+
+define / BIGRADIUS1 / 21.11
+define / BIGRADIUS2 / 21.0 
+define / TOP / 0.0
+define / BOTTOM / -100.0
+define / ZD / -70.0  #cavity center depth
+define / NR / 6 
+# define / NT / 51
+define / NT / 33
+define / NZ / 21
+# define / MO / motet2
+# cmo / create / motet2
+
+#------------------------------------------
+
+# create quartersphere cavity (tet sphere w/ projection of cube)
+# createpts / rtp / NR NT NT / 0.0 0.0 0. / RADIUS 180. 90. / 1 1 1  
+geometry / create / geom_sph_shells
+cmo / create / dummy
+cmo / geometry / dummy / geom_sph_shells
+
+surface/sphere_r1/intrface/sphere/0.0,0.0,0.0/R1/
+surface/sphere_r2/intrface/sphere/0.0,0.0,0.0/R2/
+surface/sphere_r3/reflect /sphere/0.0,0.0,0.0/R3/
+surface/sphere_r4/reflect /sphere/0.0,0.0,0.0/R4/
+surface/boundbox/reflect /box/-4.,-4.,-4./4.,4.,4.
+
+region /r_r1   /lt sphere_r1/
+region /r_r1_r2/ge sphere_r1 and lt sphere_r2/
+# region /r_r2_r3/ge sphere_r2 and le sphere_r3/
+region /r_r2_r3/ge sphere_r2 and lt sphere_r3/
+region /r_r3_r4/ge sphere_r3 and le sphere_r4/
+
+mregion/m_r1 /lt sphere_r1/
+mregion/m_r1_r2/gt sphere_r1 and lt sphere_r2/
+# mregion/m_r2_r3/gt sphere_r2 and le sphere_r3/
+mregion/m_r2_r3/gt sphere_r2 and lt sphere_r3/
+mregion/m_r3_r4/gt sphere_r3 and le sphere_r4/
+
+
+
+define / npts / 486
+
+cmo/create/motet2/ / / tet
+cmo / geometry / motet2 / geom_sph_shells
+cmo / constraint / motet2 / dummy
+
+#createpts/sphere/1/2/ npts /0./R1/0.0,0.0,0.0/1,0,0.0/
+#createpts/sphere/1/2/ npts /R1/R2/0.0,0.0,0.0/1,0,0.0/
+#createpts/sphere/1/2/ npts /R2/R3/0.0,0.0,0.0/1,0,0.0/
+
+createpts/sphere/1/2/ npts /R4/R4/0.0,0.0,0.0/1,0,0.0/
+
+
+#-- copy pts from outermost shell
+#pset / outershell / seq / 0 0 0 /
+
+
+#filter / 1 0 0
+#rmpoint / compress
+#setpts
+#connect
+#settets
+rmpoint / compress
+#trans / 1 0 0 / 0. 0. 0. / 0. 0. ZD 
+#trans / 0 0 0 / 0. 0. 0. / 0. 0. ZD 
+#setpts
+#settets
+
+
+#dump / avs / cube_tet.inp / motet2
+cmo / status / motet2
+
+#-------------------------------------------------- 
+# make only a circle
+# remove a x-dimension of the sphere 
+surface / rq1 / reflect / plane / 0. 0. BOTTOM / 0. 25. TOP
+#surface / rq1 / interface / plane / 0. 0. BOTTOM / 0. 25. TOP
+region / r_quarter1 / lt rq1 
+region / r_quarter3 / gt rq1
+rmregion / r_quarter1
+rmregion / r_quarter3
+
+# remove extra y-dimension of the sphere 
+surface / rq2 / reflect / plane / 0. 0. BOTTOM / 10000. 0. TOP
+region / r_quarter2 / gt rq2
+rmregion / r_quarter2
+
+## remove another quarter of the sphere
+#surface / rq3 / interface / plane / 0. 25. BOTTOM / 0. 0. TOP
+#region / r_quarter3 / lt rq3
+#rmregion / r_quarter3
+
+
+filter / 1 0 0 
+rmpoint / compress
+trans / 1 0 0 / 0. 0. 0. / 0. 0. ZD 
+
+dump / avs / cube_tet.inp / motet2
+
+
+
+finish
+#-------------------------------------------------- 
+#--- Copy pts from outermost sphere shell for perim
+rmregion / r_r1
+rmregion / r_r2
+rmregion / r_r3
+rmpoint / compress
+
+
+# remove points not on shell (interior points)
+#surface / perim / reflect /sphere / 0. 0. ZD R4
+#region / interior / lt perim
+#rmregion / interior
+#filter / 1 0 0 
+#rmpoint / compress
+
+#pset / pdelete / geom /rtp / 1 0 0 / 0. 0. 0. / 19. 360. 180. / 0. 0. ZD
+#rmpoint / pset get pdelete
+#rmpoint / compress
+#filter / 1 0 0 
+#rmpoint / compress
+
+#connect
+
+dump / avs / cube_tet.inp / motet2
+
+finish
+
+#cmo / status / motet2
+cmo / delete / motet2
+# cmo / status / cmo1
+# cmo / delete / cmo1
+cmo / delete / dummy
+
+
+
+finish

@@ -1,0 +1,26 @@
+define / RADIUS / 20.0
+
+define / R1 / 2.5
+define / R2 / 5.0
+define / R3 / 7.5
+define / R4 / 10.0
+define / R5 / 12.5
+define / R6 / 15.0
+define / R7 / 17.5
+define / R8 / 20.0 
+
+# define / BIGRADIUS1 / 21.11
+# define / BIGRADIUS2 / 21.0 
+define / BIGRADIUS1 / 22.11
+define / BIGRADIUS2 / 22.0 
+define / TOP / 0.0
+define / BOTTOM / -100.0
+define / ZD / -70.0  #cavity center depth
+define / NR / 6 
+# define / NT / 51
+define / NT / 33
+define / NZ / 21
+# define / MO / motet2
+# cmo / create / motet2
+
+finish

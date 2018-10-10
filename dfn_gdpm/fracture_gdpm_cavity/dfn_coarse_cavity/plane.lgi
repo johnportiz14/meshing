@@ -1,0 +1,76 @@
+
+input / parameters.lgi
+
+#-----------CREATE FRACTURE PLANE-----------
+# Build plane triangle mesh --------
+define / MO / motet1
+cmo / create / motet1 / / / triplane
+# createpts / xyz / 1 26 101 / 0. 0. BOTTOM / 0. 25. TOP / 1 1 1 
+createpts / xyz / 1 11 41 / 0. 0. BOTTOM / 0. 25. TOP / 1 1 1 
+
+
+#- start removing around the circular area where sphere will go-----------
+pset / pdelete / geom / rtp / 1 0 0 / 0. 0. 0. / BIGRADIUS1 360. 180. / 0. 0. ZD 
+rmpoint / pset get pdelete 
+rmpoint / compress
+filter / 1 0 0 
+rmpoint / compress
+
+pset / pdelete / geom / rtp / 1 0 0 / 0. 0. 0. / BIGRADIUS1 360. 180. / 0. 0. ZD 
+rmpoint / pset get pdelete 
+rmpoint / compress
+filter / 1 0 0 
+rmpoint / compress
+
+cmo / printatt / motet1 / -xyz- / minmax
+#---- Add in perimeter pts that will collocate with cavity's perimeter pts
+define / npts / 486
+createpts/sphere/1/2/ npts /RADIUS/RADIUS/0.0,0.0,ZD/1,0,0.0/
+# remove a x-dimension of the sphere 
+surface / rq1 / reflect / plane / 0. 0. BOTTOM / 0. 25. TOP
+region / r_quarter1 / lt rq1 
+region / r_quarter3 / gt rq1
+rmregion / r_quarter1
+rmregion / r_quarter3
+# remove extra y-dimension of the sphere 
+surface / rq2 / reflect / plane / 0. 0. BOTTOM / 10000. 0. TOP
+region / r_quarter2 / gt rq2
+rmregion / r_quarter2
+
+filter / 1 0 0 
+rmpoint / compress
+
+# #- create a point at cavity center so we can easily delete all elements to it
+createpts / xyz / 1 1 1 / 0. 0. ZD / 0. 0. ZD / 1 1 1 
+
+cmo / status / motet1
+cmo / setatt / motet1 / xic / 1 0 0 / 0.0
+cmo / setatt / motet1 / imt / 1 0 0 / 1
+connect
+
+#--- remove center point of removed cutout
+pset / centroid / geom / xyz / 1 0 0 / -1. -1. ZD / 1. 1. ZD 
+rmpoint / pset get centroid / inclusive
+rmpoint / compress
+
+resetpts / itp 
+
+#---create a uniform point distribution for better triangles
+smooth
+recon 0 
+smooth
+recon 0 
+smooth
+recon 0 
+smooth
+recon 0 
+
+dump / avs / plane.inp / motet1
+
+
+
+
+
+
+finish
+

@@ -1,0 +1,4 @@
+lagrit_exe : '/n/swdev/mesh_tools/lagrit/install-Ubuntu-16.04-x86_64-gcc5.4.0/bin/lagrit'
+#gmv_exe : '/gmv/executable/location/gmv' 
+#paraview_exe : '/usr/bin/paraview'
+

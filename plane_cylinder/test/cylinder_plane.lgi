@@ -1,0 +1,223 @@
+#define / NP /   5
+
+#define / MO / motet2
+#cmo / create / MO
+#createpts / xyz / NP NP NP / -1. -1. -1. / 1. 1. 1. / 1 1 1
+#cmo / setatt / MO / imt / 1 0 0 / 2
+#connect
+#cmo / setatt / MO / itetclr / 1 0 0 / 2
+#resetpts / itp
+
+#define / NP / 5
+#define / MO / motet1
+#cmo / create / MO / / / triplane
+#createpts / xyz / NP NP 1 / -1. -1. 0. / 1. 1. 0. / 1 1 1
+#createpts / xyz / 9 9 1 / -2. -2. 0. / 2. 2. 0. / 1 1 1
+#cmo / setatt / MO / imt / 1 0 0 / 1
+#filter / 1 0 0
+#rmpoint / compress
+#connect
+
+#pset / pdelete / geom / xyz / 1 0 0 / -0.99 -0.99 0. / 0.99 0.99 0.
+#rmpoint / pset get pdelete / inclusive
+#rmpoint/ compress
+#resetpts / itp
+
+
+#cmo / setatt / MO / itetclr / 1 0 0 / 1
+#resetpts / itp
+
+#define / MO / motet2
+#cmo / copy / MO / motet1
+#cmo / setatt / MO / imt / 1 0 0 / 2
+#cmo / setatt / MO / itetclr / 1 0 0 / 2
+#trans / 1 0 0 / 0. 0. 0. / 1. 0. 0.
+
+
+
+
+# Build cylinder
+#
+define / RADIUS / 1.0
+define / Z0 / -2.0
+define / Z1 /  2.0
+define / RBH / 0.1
+define / NR / 6
+define / NT / 51
+define / NZ / 21
+define / MO / motet2
+cmo / create / motet2
+createpts / rtz / NR NT NZ / 0.0 0.0 Z0 / RADIUS  360. Z1 / 1 1 1
+cmo / setatt / motet2 / imt / 1 0 0 / 2
+
+pset / pdelete / geom / rtz / 1 0 0 / 0. 0. Z0 / RBH 360. Z1 / 0 0 0
+rmpoint / pset get pdelete / inclusive
+rmpoint/ compress
+resetpts / itp
+#cmo / setatt / dfnmo/itetclr / 1 0 0/1
+recon / 1
+
+
+filter / 1 0 0
+rmpoint / compress
+
+connect
+
+
+#
+# Build plane triangle mesh
+#
+define / MO / motet1
+cmo / create / motet1 / / / triplane
+createpts / rtz / NR NT NZ / 0.0 0.0 0.0 / RADIUS  360. 0.0 / 1 1 1
+createpts / xyz / 26 26  1 / -3. -3. 0. / 3. 3. 0. / 1 1 1
+
+cmo / setatt / motet1 / imt / 1 0 0 / 1
+
+filter / 1 0 0
+rmpoint / compress
+
+connect 
+
+
+pset / pdelete / geom / rtz / 1 0 0 / 0. 0. -1.0 / .9999999 360. 1.0
+rmpoint / pset get pdelete / inclusive
+rmpoint/ compress
+resetpts / itp
+
+
+
+
+#### example of cylinder and plane crossing cylinder
+
+# there are dudded points, tagged from the center of cylinder
+# they have not been removed; for them imt=0 
+
+#read / gmv / plane.gmv / motet1
+
+# if we want those dudded points removed
+#rmpoint/ compress
+#resetpts / itp
+
+#read / gmv / cylinder.gmv / motet2
+
+# define imt and color for two mesh objects
+
+cmo / setatt / motet1 / itetclr / 1 0 0 / 1
+cmo / setatt / motet2 / itetclr / 1 0 0 / 2
+
+# be careful here: if there are more than one plane in motet1 then all of them will have imt=1
+cmo / setatt / motet1 / imt / 1 0 0/ 1
+cmo / setatt / motet2 / imt / 1 0 0/ 2
+
+dump/ stor/ plane / motet1 / ascii/ none
+dump/ stor/ cylinder / motet2 / ascii/ none
+
+
+# merge two mesh objects together and get FEHM output
+# the orefer is important: plane goes first
+addmesh / merge / moall / motet1 / motet2
+
+cmo / status / brief
+
+
+dump / fehm / cyl_plane / moall
+
+# stor file with no compression (works for tet-tet or tri-tri)
+# for mixed tet-tri use external code
+
+#dump/ stor/ cyl_plane1 / moall / ascii/ none
+
+pset / top/ attribute / zic / 1,0,0/ gt / 1.995
+pset / bottom/ attribute/ zic/ 1,0,0/ lt/ -1.995
+pset / left_w / attribute/ xic/ 1,0,0 /lt / -2.995 
+pset / front_s / attribute/ yic / 1,0,0 / gt/ 2.995
+pset / right_e / attribute/ xic/1,0,0/ gt/ 2.995
+pset / back_n / attribute/ yic/ 1,0,0 / lt/ -2.995
+pset/-all-/ zone / boundary / ascii 
+
+
+
+### following commands are needed to create a list of common nodes
+ 
+# compute distnace between two mesh objects and ouput zone files with common nodes 
+
+#compute / distance_field / motet1 / motet2/ df_12
+#pset / pcommon / attribute / df_12 / 1 0 0 / le 1.e-3
+#pset / pcommon / zone / common_1_2.zone
+
+#compute / distance_field / motet2 / motet1/ df_21
+#pset / pcommon / attribute / df_21 / 1 0 0 / le 1.e-3
+#pset / pcommon / zone / common_2_1.zone
+
+
+# create new attributes to remember node_id before merging
+
+cmo / addatt / motet1 / meshid / vint / scalar / nnodes
+cmo / addatt / motet2 / meshid / vint / scalar / nnodes
+cmo / setatt / motet1 / meshid / 1 0 0 / 1
+cmo / setatt / motet2 / meshid / 1 0 0 / 2
+
+cmo/set_id/motet1/both/ id_n_1 / id_e_1 
+cmo/set_id/motet2/both/ id_n_2 / id_e_2 
+
+cmo / addatt / motet1 / id_n_2 / vint / scalar / nnodes
+cmo / setatt / motet1 / id_n_2 / 1 0 0 / 0
+cmo / addatt / motet2 / id_n_1 / vint / scalar / nnodes
+cmo / setatt / motet2 / id_n_1 / 1 0 0 / 0
+
+#
+# The step below is only done so that the pt_gtg attribute is created
+#
+cmo / addatt / motet1 / tmpvar / vdouble / scalar / nnodes
+cmo / addatt / motet2 / tmpvar / vdouble / scalar / nnodes
+
+interpolate/voronoi/motet1/tmpvar/1 0 0/motet2/yic/keepatt
+interpolate/voronoi/motet2/tmpvar/1 0 0/motet1/yic/keepatt
+
+# comment next two lines if want to keep tmpvar attribute
+cmo / DELATT / motet1 / tmpvar
+cmo / DELATT / motet2 / tmpvar
+
+#
+# Merge mo1 and mo2
+#
+addmesh / merge / mo_1_2 / motet1 / motet2
+cmo / printatt / mo_1_2 / -all- / minmax/
+cmo / select / mo_1_2
+
+filter / 1 0 0 / / min / meshid
+cmo / printatt / mo_1_2 / -all- / minmax/
+
+
+cmo / modatt / mo_1_2 / imt / ioflag / gl
+cmo / modatt / mo_1_2 / isn / ioflag / l
+cmo / modatt / mo_1_2 / icr / ioflag / l
+cmo / modatt / mo_1_2 / df_12 / ioflag / l
+cmo / modatt / mo_1_2 / ccoef / ioflag / l
+
+dump / avs2 / common_pts1.table / mo_1_2 / 0 0 1 0
+dump / avs / cyl_plane.inp / mo_1_2
+dump/ stor/ plane / motet1 / ascii/ none
+dump/ stor/ cylinder / motet2 / ascii/ none
+
+cmo / select / mo_1_2
+
+
+dump / gmv / tmp_cylpl.gmv / mo_1_2
+rmpoint / compress
+dump / gmv / tmp_cylplrmpoint.gmv / mo_1_2
+resetpts / itp 
+cmo / printatt / mo_1_2 / -all- / minmax/
+# after removing duplicate points
+dump / avs2 / common_pts2.table / mo_1_2 / 0 0 1 0
+#dump / gmv / tmp_cylplfinal.gmv / mo_1_2
+cmo/ printatt/ mo_1_2 / -xyz- / minmax
+
+
+#JOHN ORTIZ 7/19/18
+pset / cyl_cavity / attribute / meshid / 1,0,0 / 1 / gt
+pset / cyl_cavity / zonn / cyl_cavity / ascii / 300
+
+
+finish

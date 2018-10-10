@@ -1,0 +1,99 @@
+input / parameters.lgi
+
+#-----------CREATE CAVITY------------------
+
+# create quartersphere cavity (tet sphere w/ projection of cube)
+# createpts / rtp / NR NT NT / 0.0 0.0 0. / RADIUS 180. 90. / 1 1 1  
+geometry / create / geom_sph_shells
+cmo / create / dummy
+cmo / geometry / dummy / geom_sph_shells
+
+# surface/sphere_r1/intrface/sphere/0.0,0.0,0.0/R1/
+# surface/sphere_r2/intrface/sphere/0.0,0.0,0.0/R2/
+# surface/sphere_r3/reflect /sphere/0.0,0.0,0.0/R3/
+# surface/sphere_r4/reflect /sphere/0.0,0.0,0.0/R4/
+surface/sphere_r1/reflect /sphere/0.0,0.0,0.0/R1/
+surface/sphere_r2/reflect /sphere/0.0,0.0,0.0/R2/
+surface/sphere_r3/reflect /sphere/0.0,0.0,0.0/R3/
+surface/sphere_r4/reflect /sphere/0.0,0.0,0.0/R4/
+surface/sphere_r5/reflect /sphere/0.0,0.0,0.0/R5/
+surface/sphere_r6/reflect /sphere/0.0,0.0,0.0/R6/
+surface/sphere_r7/reflect /sphere/0.0,0.0,0.0/R7/
+surface/sphere_r8/reflect /sphere/0.0,0.0,0.0/R8/
+surface/boundbox/reflect /box/-20.,-20.,-20./20.,20.,20.
+
+region /r_r1   /lt sphere_r1/
+region /r_r1_r2/ge sphere_r1 and lt sphere_r2/
+region /r_r2_r3/ge sphere_r2 and lt sphere_r3/
+region /r_r3_r4/ge sphere_r3 and lt sphere_r4/
+region /r_r4_r5/ge sphere_r4 and lt sphere_r5/
+region /r_r5_r6/ge sphere_r5 and lt sphere_r6/
+region /r_r6_r7/ge sphere_r6 and lt sphere_r7/
+region /r_r7_r8/ge sphere_r7 and le sphere_r8/
+
+
+mregion/m_r1 /lt sphere_r1/
+mregion/m_r1_r2/gt sphere_r1 and lt sphere_r2/
+mregion/m_r2_r3/gt sphere_r2 and lt sphere_r3/
+mregion/m_r3_r4/gt sphere_r3 and lt sphere_r4/
+mregion/m_r4_r5/gt sphere_r4 and lt sphere_r5/
+mregion/m_r5_r6/gt sphere_r5 and lt sphere_r6/
+mregion/m_r6_r7/gt sphere_r6 and lt sphere_r7/
+mregion/m_r7_r8/gt sphere_r7 and le sphere_r8/
+
+
+
+define / npts / 486
+
+cmo / create / motet2 / / / tet
+cmo / geometry / motet2 / geom_sph_shells
+cmo / constraint / motet2 / dummy
+
+createpts/sphere/1/2/ npts /0./R1/0.0,0.0,0.0/1,0,0.0/
+createpts/sphere/1/2/ npts /R1/R2/0.0,0.0,0.0/1,0,0.0/
+createpts/sphere/1/2/ npts /R2/R3/0.0,0.0,0.0/1,0,0.0/
+createpts/sphere/1/2/ npts /R3/R4/0.0,0.0,0.0/1,0,0.0/
+createpts/sphere/1/2/ npts /R4/R5/0.0,0.0,0.0/1,0,0.0/
+createpts/sphere/1/2/ npts /R5/R6/0.0,0.0,0.0/1,0,0.0/
+createpts/sphere/1/2/ npts /R6/R7/0.0,0.0,0.0/1,0,0.0/
+createpts/sphere/1/2/ npts /R7/R8/0.0,0.0,0.0/1,0,0.0/
+
+# cmo / status motet2
+
+cmo / setatt / motet2 / imt / 1 0 0 / 2
+cmo / setatt / motet2 / itp / 1 0 0 / 0 
+
+cmo / status motet2
+
+filter / 1 0 0
+# rmpoint / compress
+rmregion / r_r1
+rmpoint / compress
+setpts
+settets
+trans / 1 0 0 / 0. 0. 0. / 0. 0. ZD 
+
+
+connect
+
+
+#----------MAKE CAVITY A QUARTER-SPHERE----------
+# remove a quarter of the sphere
+surface / rq1 / reflect / plane / 0. 0. BOTTOM / 0. 25. TOP
+region / r_quarter1 / lt rq1
+rmregion / r_quarter1
+# remove another quarter of the sphere
+surface / rq2 / reflect / plane / 0. 0. BOTTOM / 10000. 0. TOP
+region / r_quarter2 / gt rq2
+rmregion / r_quarter2
+connect
+
+
+dump / avs / cube_tet.inp / motet2
+
+cmo / status / motet2
+# cmo / delete / motet2
+cmo / delete / dummy
+
+
+finish

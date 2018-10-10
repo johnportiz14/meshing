@@ -1,0 +1,10 @@
+input lagrit.input_geom
+input lagrit.input_icos_162
+input lagrit.input_icos_642
+input lagrit.input_cube
+input lagrit.input_icos_642_tet
+input lagrit.input_rtp
+input lagrit.input_sphere_in_box
+input lagrit.input_merge
+
+finish

@@ -1,0 +1,93 @@
+
+
+
+# Build cylinder
+#
+define / RADIUS / 1.0
+define / Z0 / -2.0
+define / Z1 /  2.0
+define / RBH / 0.1
+define / NR / 6
+define / NT / 51
+define / NZ / 21
+define / MO / motet1
+# cmo / create / motet2
+# createpts / rtz / NR NT NZ / 0.0 0.0 Z0 / RADIUS  360. Z1 / 1 1 1
+# cmo / setatt / motet2 / imt / 1 0 0 / 2
+# 
+# pset / pdelete / geom / rtz / 1 0 0 / 0. 0. Z0 / RBH 360. Z1 / 0 0 0
+# rmpoint / pset get pdelete / inclusive
+# rmpoint/ compress
+# resetpts / itp
+# #cmo / setatt / dfnmo/itetclr / 1 0 0/1
+# recon / 1
+# 
+# 
+# filter / 1 0 0
+# rmpoint / compress
+# 
+# connect
+
+
+#
+# Build plane triangle mesh
+#
+define / MO / motet1
+cmo / create / motet1 / / / triplane
+# createpts / rtz / NR NT NZ / 0.0 0.0 0.0 / RADIUS  360. 0.0 / 1 1 1
+createpts / xyz / 26 26  1 / -3. -3. 0. / 3. 3. 0. / 1 1 1
+
+cmo / setatt / motet1 / imt / 1 0 0 / 1
+
+filter / 1 0 0
+rmpoint / compress
+
+connect 
+
+
+# pset / pdelete / geom / rtz / 1 0 0 / 0. 0. -1.0 / .9999999 360. 1.0
+# rmpoint / pset get pdelete / inclusive
+# rmpoint/ compress
+# resetpts / itp
+
+
+
+
+
+# define imt and color for two mesh objects
+
+cmo / setatt / motet1 / itetclr / 1 0 0 / 1
+
+# be careful here: if there are more than one plane in motet1 then all of them will have imt=1
+cmo / setatt / motet1 / imt / 1 0 0/ 1
+
+dump/ stor/ plane / motet1 / ascii/ none
+
+
+# merge two mesh objects together and get FEHM output
+# the orefer is important: plane goes first
+# addmesh / merge / moall / motet1 / motet2
+
+cmo / status / brief
+
+
+# dump / fehm / cyl_plane / moall
+dump / avs / plane.inp / motet1
+dump / fehm / plane / motet1
+
+# stor file with no compression (works for tet-tet or tri-tri)
+# for mixed tet-tri use external code
+
+#dump/ stor/ cyl_plane1 / moall / ascii/ none
+
+pset / top/ attribute / zic / 1,0,0/ gt / 1.995
+pset / bottom/ attribute/ zic/ 1,0,0/ lt/ -1.995
+pset / left_w / attribute/ xic/ 1,0,0 /lt / -2.995 
+pset / front_s / attribute/ yic / 1,0,0 / gt/ 2.995
+pset / right_e / attribute/ xic/1,0,0/ gt/ 2.995
+pset / back_n / attribute/ yic/ 1,0,0 / lt/ -2.995
+pset/-all-/ zone / boundary / ascii 
+
+
+
+finish

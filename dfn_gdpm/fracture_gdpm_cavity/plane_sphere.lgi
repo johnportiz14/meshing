@@ -1,0 +1,202 @@
+
+
+
+# Build quarter-sphere ------------
+
+define / RADIUS / 20.0
+
+define / R1 / 5.0
+define / R2 / 10.0
+define / R3 / 15.0
+define / R4 / 20.0
+
+define / BIGRADIUS1 / 21.11
+define / BIGRADIUS2 / 21.0 
+define / TOP / 0.0
+define / BOTTOM / -100.0
+define / ZD / -70.0  #cavity center depth
+define / NR / 6 
+# define / NT / 51
+define / NT / 33
+define / NZ / 21
+define / MO / motet2
+cmo / create / motet2
+
+# create quartersphere cavity
+# createpts / rtp / NR NT NT / 0.0 0.0 0. / RADIUS 180. 90. / 1 1 1  
+createpts / rtp / NR 5 5 / 0.0 0.0 0. / R1 180. 90. / 1 1 1  
+createpts / rtp / NR 9 9 / R1 0.0 0. / R2 180. 90. / 1 1 1  
+createpts / rtp / NR 17 17 / R2 0.0 0. / R3 180. 90. / 1 1 1  
+createpts / rtp / NR 33 33 / R3 0.0 0. / R4 180. 90. / 1 1 1  
+cmo / setatt / motet2 / imt / 1 0 0 / 2 
+
+# pset / pdelete / geom / rtp / 1 0 0 / 0. 0. 
+
+filter / 1 0 0
+rmpoint / compress
+#- move hemisphere to explosion depth (originally built at origin)
+trans / 1 0 0 / 0. 0. 0. / 0. 0. ZD 
+
+connect
+dump / avs / sphere.inp / motet2
+
+
+
+
+# Build plane triangle mesh --------
+define / MO / motet1
+cmo / create / motet1 / / / triplane
+createpts / xyz / 1 26 101 / 0. 0. BOTTOM / 0. 25. TOP / 1 1 1 
+
+# #7/19/
+# cmo / setatt / motet1 / imt / 1 0 0 / 1
+# filter / 1 0 0 
+# rmpoint / compress
+# # connect
+
+#- start removing around the circular area where sphere will go-----------
+pset / pdelete / geom / rtp / 1 0 0 / 0. 0. 0. / BIGRADIUS1 360. 180. / 0. 0. ZD 
+rmpoint / pset get pdelete 
+rmpoint / compress
+
+filter / 1 0 0 
+rmpoint / compress
+
+cmo / printatt / motet1 / -xyz- / minmax
+createpts / rtp / 2 NT 1 / RADIUS 0. 90. / BIGRADIUS2 180. 90. / 1,1,1
+pset / ptrans / seq / 0 0 0
+trans / pset get ptrans / 0 0 0 / 0 0 ZD
+
+#- create a point at cavity center so we can easily delete all elements to it
+createpts / xyz / 1 1 1 / 0. 0. ZD / 0. 0. ZD / 1 1 1 
+
+cmo / setatt / motet1 / xic / 1 0 0 / 0.0
+# cmo / printatt / motet1 / -xyz- / minmax
+cmo / setatt / motet1 / imt / 1 0 0 / 1
+connect
+
+
+
+
+pset / centroid / geom / xyz / 1 0 0 / -1. -1. ZD / 1. 1. ZD 
+rmpoint / pset get centroid / inclusive
+rmpoint / compress
+
+resetpts / itp 
+
+
+#---create a uniform point distribution for better triangles
+smooth
+recon 0 
+smooth
+recon 0 
+smooth
+recon 0 
+smooth
+recon 0 
+
+
+cmo / setatt / motet1 / itetclr / 1 0 0 / 1
+cmo / setatt / motet2 / itetclr / 1 0 0 / 2
+
+# be careful here: if there are more than one plane in motet1 then all of them will have imt=1
+cmo / setatt / motet1 / imt / 1 0 0/ 1
+cmo / setatt / motet2 / imt / 1 0 0/ 2
+
+dump / avs / fracture_plane.inp / motet1
+# # dump / avs / tmp.inp / motet1
+dump / fehm / fracture_plane / motet1
+dump / fehm / sphere / motet2
+
+
+# merge two mesh objects together and get FEHM output
+# the order is important: plane goes first
+addmesh / merge / moall / motet1 / motet2
+cmo / status / brief
+
+dump / fehm / plane_sphere / moall
+dump / avs / plane_sphere.inp / moall
+
+
+
+
+#========================================================================
+
+# create new attributes to remember node_id before merging
+cmo / addatt / motet1 / meshid / vint / scalar / nnodes
+cmo / addatt / motet2 / meshid / vint / scalar / nnodes
+cmo / setatt / motet1 / meshid / 1 0 0 / 1
+cmo / setatt / motet2 / meshid / 1 0 0 / 2
+
+cmo/set_id/motet1/both/ id_n_1 / id_e_1
+cmo/set_id/motet2/both/ id_n_2 / id_e_2 
+
+cmo / addatt / motet1 / id_n_2 / vint / scalar / nnodes
+cmo / setatt / motet1 / id_n_2 / 1 0 0 / 0
+cmo / addatt / motet2 / id_n_1 / vint / scalar / nnodes
+cmo / setatt / motet2 / id_n_1 / 1 0 0 / 0
+
+#
+# The step below is only done so that the pt_gtg attribute is created
+# 
+cmo / addatt / motet1 / tmpvar / vdouble / scalar / nnodes
+cmo / addatt / motet2 / tmpvar / vdouble / scalar / nnodes
+
+interpolate/voronoi/motet1/tmpvar/1 0 0/motet2/yic/keepatt
+interpolate/voronoi/motet2/tmpvar/1 0 0/motet1/yic/keepatt
+
+# comment next two lines if want to keep tmpvar attribute
+cmo / DELATT / motet1 / tmpvar
+cmo / DELATT / motet2 / tmpvar
+
+#
+# Merge mo1 and mo2
+#
+addmesh / merge / mo_1_2 / motet1 / motet2
+cmo / printatt / mo_1_2 / -all- / minmax/
+cmo / select / mo_1_2
+
+filter / 1 0 0 / / min / meshid
+cmo / printatt / mo_1_2 / -all- / minmax/
+
+
+cmo / modatt / mo_1_2 / imt / ioflag / gl
+cmo / modatt / mo_1_2 / isn / ioflag / l
+cmo / modatt / mo_1_2 / icr / ioflag / l
+cmo / modatt / mo_1_2 / df_12 / ioflag / l
+cmo / modatt / mo_1_2 / ccoef / ioflag / l
+
+dump / avs2 / common_pts1.table / mo_1_2 / 0 0 1 0
+# dump / avs / cyl_plane.inp / mo_1_2 #(original)
+dump / avs / plane_sphere.inp / mo_1_2
+# dump/ stor/ plane / motet1 / ascii/ none #(original)
+dump/ stor/ fracture_plane / motet1 / ascii/ none
+# dump/ stor/ cylinder / motet2 / ascii/ none #(original)
+dump/ stor/ sphere / motet2 / ascii/ none
+
+cmo / select / mo_1_2
+
+
+dump / gmv / tmp_cylpl.gmv / mo_1_2
+rmpoint / compress
+dump / gmv / tmp_cylplrmpoint.gmv / mo_1_2
+resetpts / itp 
+cmo / printatt / mo_1_2 / -all- / minmax/
+# after removing duplicate points
+dump / avs2 / common_pts2.table / mo_1_2 / 0 0 1 0
+#dump / gmv / tmp_cylplfinal.gmv / mo_1_2
+cmo/ printatt/ mo_1_2 / -xyz- / minmax
+
+
+
+pset / top / attribute / zic / 1,0,0 / gt / -0.01
+pset / top / zonn / top / ascii / 100
+pset / cavity / attribute / meshid / 1,0,0 / 1 / gt
+pset / cavity / zonn / cavity / ascii / 300
+pset / fracture / attribute / meshid 1,0,0 / 2 / lt
+pset / fracture / zonn / fracture / ascii / 200
+
+
+finish
+
+
