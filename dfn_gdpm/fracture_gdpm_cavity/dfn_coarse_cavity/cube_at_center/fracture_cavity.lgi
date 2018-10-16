@@ -163,25 +163,25 @@ rmpoint / compress
 setpts
 connect
 settets
-#rmregion / r_r1
+rmregion / r_r1
 rmpoint / compress
+# trans / 1 0 0 / 0. 0. 0. / 0. 0. ZD 
+
+#build cube at sphere center to reduce multi-node connections
+createpts / xyz / 9 9 9 / -1.25 -1.25 -1.25 / 1.25 1.25 1.25 /1,1,1
 trans / 1 0 0 / 0. 0. 0. / 0. 0. ZD 
 
-##build cube at sphere center to reduce multi-node connections
-#createpts / xyz / 9 9 9 / -1.25 -1.25 -1.25 / 1.25 1.25 1.25 /1,1,1
-#trans / 1 0 0 / 0. 0. 0. / 0. 0. ZD 
-#
-## -- (added following line 10/10/18) -----
-#pset / cube / seq / 0 0 0 
-#region / cubepts / le sphere_r3
-#
-#filter / 1 0 0 
-#rmpoint / compress
-#resetpts / itp
-#cmo / setatt / motet2 / imt / 1 0 0 / 2
-#connect
-#
-#cmo / status / motet2
+# -- (added following line 10/10/18) -----
+pset / cube / seq / 0 0 0 
+region / cubepts / le sphere_r3
+
+filter / 1 0 0 
+rmpoint / compress
+resetpts / itp
+cmo / setatt / motet2 / imt / 1 0 0 / 2
+connect
+
+cmo / status / motet2
 
 #pset / cube / list /
 
@@ -299,6 +299,8 @@ dump/ stor/ fracture_plane / motet1 / ascii/ none
 dump/ stor/ sphere / motet2 / ascii/ none
 
 cmo / select / mo_1_2
+
+cmo / status / brief
 
 # --- a this point mo_1_2 still has same # of nodes as moall
 dump / gmv / tmp_cylpl.gmv / mo_1_2
