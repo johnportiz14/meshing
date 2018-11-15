@@ -1,8 +1,7 @@
 """
-3D Quarter-model mesh domain of fracture, matrix,
-and simplified explosion cavity (cube).
+3D Quarter-model mesh domain of fracture and cavity (no matrix).
 author: jportiz
-9/28/18
+11/15/18
 """
 from pylagrit import PyLaGriT
 import numpy as np
@@ -19,8 +18,8 @@ df = 0.001
 largedf = 0.05 #[m] fracture aperture
 lr = 3 #levels of mesh refinement
 #  d_base = df/2.*2**(lr+1) #calculated dimension of base block
-cav_center_depth = 80. #[m] depth of cavity center
-radius = 10. #[m] cavity radius
+cav_center_depth = 70. #[m] depth of cavity center
+radius = 20. #[m] cavity radius
 
 # grid discretization
 dx = 1.
@@ -44,7 +43,7 @@ maxs = np.array([max(x), max(y), max(z)])
 
 #  m = l.gridder(x,y,z,connect=True)
 m = l.gridder(telx,y,z,connect=True) #refines toward fracture plane
-m.setatt('imt',1) #matrix nodes material set to '1'
+m.setatt('imt',2) #matrix nodes material set to '2'
 
 
 
@@ -54,12 +53,12 @@ m.setatt('imt',1) #matrix nodes material set to '1'
 #---------------------------------------------------------------------- 
 fmins = np.array([min(x),min(y),min(z)])
 #  fmaxs = np.array([df/2.,max(y),max(z)])
-fmaxs = np.array([df,max(y),max(z)])
+fmaxs = np.array([df-1.e-5,max(y),max(z)])
 
 pfracture = m.pset_geom_xyz(mins=fmins,maxs=fmaxs)
-pfracture.setatt('imt', 2)
-pfracture.dump('fracture', zonetype='zone')
-pfracture.dump('fracture', zonetype='zonn')
+pfracture.setatt('imt', 1)
+#  pfracture.dump('fracture', zonetype='zone')
+#  pfracture.dump('fracture', zonetype='zonn')
 
 
 
@@ -84,8 +83,11 @@ phi2 = 360
 pcavity = m.pset_geom_rtp(mins=(0.,theta1,phi1), maxs=(radius,theta2,phi2), ctr=(0,0,-cav_center_depth))
 # change material of cavity nodes
 pcavity.setatt('imt',3)
-pcavity.dump('cavity', zonetype='zone')
-pcavity.dump('cavity', zonetype='zonn')
+#  pcavity.dump('cavity', zonetype='zone')
+#  pcavity.dump('cavity', zonetype='zonn')
+
+
+
 
 
 #---------------------------------------------------------------------- 
@@ -95,25 +97,52 @@ pcavity.dump('cavity', zonetype='zonn')
 ptop = m.pset_geom_xyz(mins=(min(x),min(y),-1.e-4),maxs=(max(x),max(y),max(z)))
 ptop.dump('top', zonetype='zone')
 ptop.dump('top', zonetype='zonn')
-#  # top fracture nodes
-#  pfractop = m.pset_geom_xyz(mins=(min(x),min(y),-1.e-4),maxs=(df/2.,max(y),max(z)),name='top')
-#  pfractop.dump('fracture', zonetype='zone')
-#  pfractop.dump('fracture', zonetype='zonn')
+
+# dump initial viz mesh before removing matrix
+m.dump('initialmesh.inp')
+
+#--------------------------------
+#       Remove matrix nodes
+#--------------------------------
+# grab all points with imt=2 (matrix nodes)
+#  pmatrix = m.pset_attribute(attribute='imt',value=1)
+#  m.rmpoint_pset(pset=pmatrix,compress=True,itype='exclusive')
+pmatrix = m.pset_attribute(attribute='imt',value=2)
+m.rmpoint_pset(pset=pmatrix,compress=True)
+
+
+#  #---re-classify the fracture and cavity zones
+#FRACTURE
+#grab entire fracture plane
+fmaxs = np.array([df,max(y),max(z)])
+pfracture = m.pset_geom_xyz(mins=fmins,maxs=fmaxs)
+pfracture.setatt('imt', 1)
+pfracture.dump('fracture', zonetype='zonn')
+#CAVITY
+#make everything not fracture set to imt=3
+pcavity1 = m.pset_attribute(attribute='imt',value=1,comparison='ne')
+pcavity1.setatt('imt',3)
+#now grab cavity nodes that are in the fracture plane
+pcavity2 = m.pset_geom_rtp(mins=(0.,theta1,phi1), maxs=(radius+9.e-1,theta2,phi2), ctr=(0,0,-cav_center_depth))
+pcavity2.setatt('imt',3)
+#combine pcavity1 and pcavity2 into single pset
+pcavity = m.pset_attribute(attribute='imt',value=3)
+pcavity.dump('cavity', zonetype='zonn')
+
+
+#  m.smooth()
+#  m.recon(0)
+#  m.smooth()
+#  m.recon(0)
+#  m.smooth()
+#  m.recon(0)
+
+
+m.dump('continuum_fracture_cavity.inp')
+m.dump_fehm('continuum_fracture_cavity')
+
 #  
-
-
-
-#  m.paraview(filename='fmc_mesh_hemisphere.inp')
-m.dump_fehm('fmc_plane_mesh_quarter')
-m.paraview(filename='fmc_plane_mesh_quartersphere.inp')
-
-
-
-
+#  # dump lagrit binary file that can be read into a .lgi input file for further tweaking
+#  m.dump_lg('initialmesh.lg')
+#  # dump viz file
 #  
-#  #  # change material of cavity nodes
-#  #  pcavity.setatt('imt',2)
-#  #  
-#  #  
-#  #  m.paraview('fmc_mesh.inp')
-#  #  

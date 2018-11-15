@@ -31,7 +31,8 @@ define / NZ / 21
 define / MO / motet1
 cmo / create / motet1 / / / triplane
 # createpts / xyz / 1 26 101 / 0. 0. BOTTOM / 0. 25. TOP / 1 1 1 
-createpts / xyz / 1 21 41 / 0. 0. BOTTOM / 0. 50. TOP / 1 1 1 
+# createpts / xyz / 1 21 41 / 0. 0. BOTTOM / 0. 50. TOP / 1 1 1 
+createpts / xyz / 1 41 81 / 0. 0. BOTTOM / 0. 50. TOP / 1 1 1 
 
 
 #- start removing around the circular area where sphere will go-----------
@@ -49,7 +50,8 @@ rmpoint / compress
 
 cmo / printatt / motet1 / -xyz- / minmax
 #---- Add in perimeter pts that will collocate with cavity's perimeter pts
-define / npts / 486
+#-- npts is of the form 6*i**2 (6 cube faces, i=pts per face; may have to be odd)
+define / npts / 2646
 createpts/sphere/1/2/ npts /RADIUS/RADIUS/0.0,0.0,ZD/1,0,0.0/
 # remove a x-dimension of the sphere 
 surface / rq1 / reflect / plane / 0. 0. BOTTOM / 0. 25. TOP
@@ -135,8 +137,8 @@ mregion/m_r6_r7/gt sphere_r6 and lt sphere_r7/
 mregion/m_r7_r8/gt sphere_r7 and le sphere_r8/
 
 
-
-define / npts / 486
+# npts is defined earlier
+define / npts / 2646
 
 cmo / create / motet2 / / / tet
 cmo / geometry / motet2 / geom_sph_shells
