@@ -14,7 +14,7 @@ l = PyLaGriT()
 xl = 50. #[m] 
 yl = 50. #[m]
 zl = 100. #[m] depth
-df = 0.001
+df = 0.05
 largedf = 0.05 #[m] fracture aperture
 lr = 3 #levels of mesh refinement
 #  d_base = df/2.*2**(lr+1) #calculated dimension of base block
@@ -29,7 +29,11 @@ dxyz = np.array([dx,dy,dz])
 
 # (1) ---- Model domain 
 x = np.arange(0,xl+dx,dx)
-telx = np.concatenate((np.array([0.,df, largedf/2.]), np.logspace(log10(largedf),log10(xl),num=50,endpoint=True)))
+#  telx = np.concatenate((np.array([0.,df, largedf/2.]), np.logspace(log10(largedf),log10(xl),num=50,endpoint=True)))
+telx = np.concatenate((np.array([0.,df]), df+np.logspace(log10(df),log10(xl),num=25,endpoint=True)))
+np.diff([0.0, df)]+np.logspace(-2,log10(xl),50)
+
+
 
 #  y = np.concatenate((np.arange(-yl/2.,0+dy,dy), np.arange(dy,yl/2+dy,dy))) #half-model
 #  y = np.arange(0,yl/2+dy,dy) #quarter-model
@@ -41,8 +45,19 @@ z = np.arange(-zl, 0.+dz, dz)
 mins = np.array([min(x), min(y), min(z)])
 maxs = np.array([max(x), max(y), max(z)])
 
-#  m = l.gridder(x,y,z,connect=True)
-m = l.gridder(telx,y,z,connect=True) #refines toward fracture plane
+
+#  m = l.gridder(telx,y,z,connect=True) #refines toward fracture plane
+m = l.gridder(telx,y,z,connect=False) #refines toward fracture plane            #NEW
+
+m.setatt('imt',2) #matrix nodes material set to '2'
+
+l.sendline('filter / 1 0 0 /; rmpoint compress')
+l.sendline('cmo printatt mo1 -all- minmax')
+
+
+
+m.connect()
+
 m.setatt('imt',2) #matrix nodes material set to '2'
 
 
@@ -90,53 +105,75 @@ pcavity.setatt('imt',3)
 
 
 
-#---------------------------------------------------------------------- 
-#            Other zones
-#---------------------------------------------------------------------- 
-# all top nodes
-ptop = m.pset_geom_xyz(mins=(min(x),min(y),-1.e-4),maxs=(max(x),max(y),max(z)))
-ptop.dump('top', zonetype='zone')
-ptop.dump('top', zonetype='zonn')
+
 
 # dump initial viz mesh before removing matrix
+#  m.connect() # NEW (11/19/18)
 m.dump('initialmesh.inp')
+m.dump_lg('initialmesh')
 
 #--------------------------------
 #       Remove matrix nodes
 #--------------------------------
 # grab all points with imt=2 (matrix nodes)
-#  pmatrix = m.pset_attribute(attribute='imt',value=1)
 #  m.rmpoint_pset(pset=pmatrix,compress=True,itype='exclusive')
-pmatrix = m.pset_attribute(attribute='imt',value=2)
-m.rmpoint_pset(pset=pmatrix,compress=True)
+#======== This part messes up the node connections around cavity =======
+#  pmatrix = m.pset_attribute(attribute='imt',value=2)
+#  m.filter()
+#  m.tri_mesh_output_prep()
+#  m.rmpoint_pset(pset=pmatrix,compress=True,resetpts_itp=False)
+#  m.rmpoint_pset(pset=pmatrix,compress=False,resetpts_itp=False)
+#  m.filter()
+#  m.tri_mesh_output_prep()
+#  m.rmpoint_pset(pset=pmatrix,compress=True)
+#  m.rmpoint_pset(pset=pmatrix,compress=True)
+#  m.rmpoint_compress(filter_bool=True)
+#======================================================================= 
 
+#  m.tri_mesh_output_prep()
+#  m.connect() # NEW (11/19/18)
+#  m.tri_mesh_output_prep()
+#  m.filter()
+#  m.tri_mesh_output_prep()
+m.dump('step2.inp')
 
-#  #---re-classify the fracture and cavity zones
-#FRACTURE
-#grab entire fracture plane
-fmaxs = np.array([df,max(y),max(z)])
-pfracture = m.pset_geom_xyz(mins=fmins,maxs=fmaxs)
-pfracture.setatt('imt', 1)
-pfracture.dump('fracture', zonetype='zonn')
-#CAVITY
-#make everything not fracture set to imt=3
-pcavity1 = m.pset_attribute(attribute='imt',value=1,comparison='ne')
-pcavity1.setatt('imt',3)
-#now grab cavity nodes that are in the fracture plane
-pcavity2 = m.pset_geom_rtp(mins=(0.,theta1,phi1), maxs=(radius+9.e-1,theta2,phi2), ctr=(0,0,-cav_center_depth))
-pcavity2.setatt('imt',3)
-#combine pcavity1 and pcavity2 into single pset
-pcavity = m.pset_attribute(attribute='imt',value=3)
-pcavity.dump('cavity', zonetype='zonn')
-
-
-#  m.smooth()
-#  m.recon(0)
-#  m.smooth()
-#  m.recon(0)
-#  m.smooth()
-#  m.recon(0)
-
+#  #  #---re-classify the fracture and cavity zones
+#  #FRACTURE
+#  #grab entire fracture plane
+#  fmaxs = np.array([df,max(y),max(z)])
+#  pfracture = m.pset_geom_xyz(mins=fmins,maxs=fmaxs)
+#  pfracture.setatt('imt', 1)
+#  pfracture.dump('fracture', zonetype='zonn')
+#  #CAVITY
+#  #make everything not fracture set to imt=3
+#  pcavity1 = m.pset_attribute(attribute='imt',value=1,comparison='ne')
+#  pcavity1.setatt('imt',3)
+#  #now grab cavity nodes that are in the fracture plane
+#  pcavity2 = m.pset_geom_rtp(mins=(0.,theta1,phi1), maxs=(radius+9.e-1,theta2,phi2), ctr=(0,0,-cav_center_depth))
+#  pcavity2.setatt('imt',3)
+#  #combine pcavity1 and pcavity2 into single pset
+#  pcavity = m.pset_attribute(attribute='imt',value=3)
+#  pcavity.dump('cavity', zonetype='zonn')
+#  #infile / initialmesh.lg
+#  
+#  m.tri_mesh_output_prep()
+#  
+#  #----------------------------------------------
+#  #            Other zones
+#  #----------------------------------------------
+#  # all top nodes
+#  ptop = m.pset_geom_xyz(mins=(min(x),min(y),-1.e-4),maxs=(max(x),max(y),max(z)))
+#  ptop.dump('top', zonetype='zone')
+#  ptop.dump('top', zonetype='zonn')
+#  #  m.smooth()
+#  #  m.recon(0)
+#  #  m.smooth()
+#  #  m.recon(0)
+#  #  m.smooth()
+#  #  m.recon(0)
+#  
+#  m.tri_mesh_output_prep()
+#  #  m.connect()     #NEW (11/19/18)
 
 m.dump('continuum_fracture_cavity.inp')
 m.dump_fehm('continuum_fracture_cavity')
