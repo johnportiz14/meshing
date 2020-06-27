@@ -1,0 +1,8 @@
+06-26-2020
+Hello All
+
+I recall that the simple 2D DFN code that I wrote in MATLAB was converted to a form that could generate a PFLOTRAN grid - Sachin? Danny? (maybe Greg also used this?)  Does anybody have this workflow handy and can send to John Ortiz?
+
+John - I am attaching two MATLAB versions (I have too many, so a bit lost about which one is best) - levyleefract5 seems to be from me, and I wonder if ...._rh refers to Ryan Haagenson and that is his version).
+
+Hari
