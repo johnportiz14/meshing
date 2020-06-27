@@ -1,3 +1,4 @@
+#
 
 define / RADIUS / 20.0
 
@@ -49,6 +50,7 @@ rmpoint / compress
 
 cmo / printatt / motet1 / -xyz- / minmax
 #---- Add in perimeter pts that will collocate with cavity's perimeter pts
+#-- npts is of the form 6*i**2 (6 cube faces, i=pts per face; may have to be odd)
 define / npts / 486
 createpts/sphere/1/2/ npts /RADIUS/RADIUS/0.0,0.0,ZD/1,0,0.0/
 # remove a x-dimension of the sphere 
@@ -135,7 +137,7 @@ mregion/m_r6_r7/gt sphere_r6 and lt sphere_r7/
 mregion/m_r7_r8/gt sphere_r7 and le sphere_r8/
 
 
-
+# npts is defined earlier
 define / npts / 486
 
 cmo / create / motet2 / / / tet
@@ -299,8 +301,6 @@ dump/ stor/ fracture_plane / motet1 / ascii/ none
 dump/ stor/ sphere / motet2 / ascii/ none
 
 cmo / select / mo_1_2
-
-cmo / status / brief
 
 # --- a this point mo_1_2 still has same # of nodes as moall
 dump / gmv / tmp_cylpl.gmv / mo_1_2
